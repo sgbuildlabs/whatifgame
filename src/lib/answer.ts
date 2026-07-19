@@ -1,4 +1,4 @@
-import { getAnthropicClient, textFromMessage } from "./anthropic";
+import { getLlmClient } from "./llm";
 import { env } from "./env";
 
 const ANSWER_SYSTEM_PROMPT = `You are "What If", a friendly, curious guide who answers kids' (ages 6-12) "what if" questions. Your answers must be BOTH fun/imaginative AND factually accurate - you are not allowed to make up fake science.
@@ -13,12 +13,10 @@ Rules:
 7. You may end with a short, playful sign-off, but it isn't required.`;
 
 export async function generateAnswer(question: string): Promise<string> {
-  const client = getAnthropicClient();
-  const message = await client.messages.create({
-    model: env.answerModel,
-    max_tokens: 600,
+  const client = getLlmClient(env.answerProvider, env.answerModel);
+  return client.generateText({
     system: ANSWER_SYSTEM_PROMPT,
-    messages: [{ role: "user", content: `What if ${question}` }],
+    prompt: `What if ${question}`,
+    maxTokens: 600,
   });
-  return textFromMessage(message).trim();
 }

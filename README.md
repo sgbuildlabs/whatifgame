@@ -7,9 +7,9 @@ factually-grounded answer plus a matching image.
 
 `POST /api/ask` runs a 4-stage pipeline:
 
-1. **Input moderation** - a fast local keyword pre-filter, then a Claude-based safety classifier.
+1. **Input moderation** - a fast local keyword pre-filter, then an LLM-based safety classifier.
    Unsafe questions never reach the main model; the kid sees a friendly warning instead.
-2. **Answer generation** - Claude answers with a system prompt that requires the response to be
+2. **Answer generation** - the LLM answers with a system prompt that requires the response to be
    fun *and* grounded in real facts, hedging when something is genuinely uncertain.
 3. **Output moderation** - the generated answer is re-checked with the same safety classifier
    before it's ever shown, as a belt-and-suspenders guard.
@@ -20,7 +20,7 @@ factually-grounded answer plus a matching image.
 ## Getting started
 
 ```bash
-cp .env.example .env.local   # fill in ANTHROPIC_API_KEY at minimum
+cp .env.example .env.local   # fill in a provider + model + matching API key at minimum
 npm install
 npm run dev
 ```
@@ -29,13 +29,21 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Configuration
 
-All models and providers are configured via environment variables (see `.env.example`) - nothing
-is hardcoded, so models can be swapped without code changes:
+The LLM **provider** and **model** are both environment-driven, not hardcoded - swap between
+Anthropic and Gemini (or change model/tier) with no code changes. See `.env.example`:
 
-- `ANTHROPIC_API_KEY`, `WHATIF_MODEL`, `WHATIF_MODERATION_MODEL`
+- `WHATIF_PROVIDER` - `anthropic` (default) or `gemini`
+- `WHATIF_MODEL` - the model name for that provider (e.g. `claude-sonnet-5` or `gemini-2.0-flash`)
+- `WHATIF_MODERATION_PROVIDER` / `WHATIF_MODERATION_MODEL` - optional, for a different (typically
+  cheaper/faster) provider or model on the safety classifier; falls back to the answer
+  provider/model when unset
+- `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` - only the key matching your chosen provider(s) is needed
 - `OPENVERSE_API_KEY` (optional)
 - `WHATIF_IMAGE_PROVIDER`, `WHATIF_IMAGE_MODEL`, `WHATIF_IMAGE_API_KEY` (optional - falls back to
   a bundled placeholder illustration when unset)
+
+Adding another LLM provider later means implementing the small `LlmClient` interface in
+`src/lib/llm/` (see `anthropic.ts` and `gemini.ts`) and wiring it into `src/lib/llm/index.ts`.
 
 ## Deliberately deferred for this fast v1
 
