@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/*
+  This app intentionally stays bright/light at all times (kids' product
+  requirement) - no prefers-color-scheme dark override.
+*/
+:root {
+  --background: #eaf6ff;
+  --foreground: #2d3047;
+  --color-sunny: #ffd166;
+  --color-coral: #ff6b6b;
+  --color-mint: #4ecdc4;
+  --color-purple: #a78bfa;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-sunny: var(--color-sunny);
+  --color-coral: var(--color-coral);
+  --color-mint: var(--color-mint);
+  --color-purple: var(--color-purple);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-display), sans-serif;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(3deg);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-twinkle {
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+
+.animate-bob {
+  animation: bob 1.4s ease-in-out infinite;
+}
