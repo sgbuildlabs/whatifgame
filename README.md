@@ -45,8 +45,21 @@ Anthropic and Gemini (or change model/tier) with no code changes. See `.env.exam
 Adding another LLM provider later means implementing the small `LlmClient` interface in
 `src/lib/llm/` (see `anthropic.ts` and `gemini.ts`) and wiring it into `src/lib/llm/index.ts`.
 
+## Rate limiting
+
+`/api/ask` enforces a cost-based cap per IP: `WHATIF_RATE_LIMIT_CENTS_PER_HOUR` (default 5 cents)
+of *actual* estimated spend per IP per clock hour, tracked from the real token usage each LLM call
+reports (priced via `src/lib/pricing.ts`) plus a flat `WHATIF_IMAGE_COST_CENTS` estimate for
+AI-generated images (free image sources don't count). Once an IP's hour-bucket total reaches the
+cap, further requests get a friendly "try again later" response (HTTP 429) instead of hitting any
+paid API.
+
+This needs a small always-on store that survives across Vercel's stateless function invocations,
+so it uses [Upstash Redis](https://upstash.com) (free tier) via `UPSTASH_REDIS_REST_URL` /
+`UPSTASH_REDIS_REST_TOKEN`. If those are unset, rate limiting is simply disabled (no blocking) -
+it's opt-in, not a hard requirement to run the app locally.
+
 ## Deliberately deferred for this fast v1
 
 RAG/web-search fact-grounding, a second automated fact-check pass, ML relevance scoring for image
-search, automated tests, auth/accounts/persistence, multi-language voice input, and rate limiting
-beyond basic input-length checks.
+search, and automated tests.

@@ -1,6 +1,12 @@
 import { getLlmClient } from "./llm";
 import { env } from "./env";
+import { computeCostCents } from "./pricing";
 import type { ModerationResult } from "./types";
+
+interface ModerationOutcome {
+  result: ModerationResult;
+  costCents: number;
+}
 
 // Small, hand-maintained list so we control false positives on innocent kid
 // words. This is a cheap first line of defense before any network call.
@@ -50,21 +56,32 @@ function getModerationClient() {
   return getLlmClient(env.moderationProvider, env.moderationModel);
 }
 
-export async function moderateInput(question: string): Promise<ModerationResult> {
+export async function moderateInput(question: string): Promise<ModerationOutcome> {
   if (!keywordPreFilter(question)) {
-    return { safe: false, category: "other_unsafe", reason: "blocked_keyword" };
+    return {
+      result: { safe: false, category: "other_unsafe", reason: "blocked_keyword" },
+      costCents: 0,
+    };
   }
   try {
-    return await getModerationClient().classify({ system: INPUT_MODERATION_PROMPT, text: question });
+    const { result, usage } = await getModerationClient().classify({
+      system: INPUT_MODERATION_PROMPT,
+      text: question,
+    });
+    return { result, costCents: computeCostCents(env.moderationModel, usage) };
   } catch {
-    return { safe: false, reason: "moderation_error" };
+    return { result: { safe: false, reason: "moderation_error" }, costCents: 0 };
   }
 }
 
-export async function moderateOutput(answer: string): Promise<ModerationResult> {
+export async function moderateOutput(answer: string): Promise<ModerationOutcome> {
   try {
-    return await getModerationClient().classify({ system: OUTPUT_MODERATION_PROMPT, text: answer });
+    const { result, usage } = await getModerationClient().classify({
+      system: OUTPUT_MODERATION_PROMPT,
+      text: answer,
+    });
+    return { result, costCents: computeCostCents(env.moderationModel, usage) };
   } catch {
-    return { safe: false, reason: "moderation_error" };
+    return { result: { safe: false, reason: "moderation_error" }, costCents: 0 };
   }
 }

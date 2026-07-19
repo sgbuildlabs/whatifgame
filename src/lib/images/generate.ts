@@ -3,7 +3,7 @@ import type { AskImage } from "../types";
 
 // A bundled, always-available bright illustration used when no AI image
 // provider is configured, or the provider call fails. Keeps the pipeline
-// from ever showing a broken image to a kid.
+// from ever showing a broken image to a kid. Free - no cost.
 const FALLBACK_IMAGE: AskImage = {
   url: "/placeholder-illustration.svg",
   source: "generated",
@@ -41,9 +41,12 @@ async function generateWithOpenAI(prompt: string): Promise<AskImage | null> {
   return null;
 }
 
-export async function generateImage(question: string, answer: string): Promise<AskImage> {
+export async function generateImage(
+  question: string,
+  answer: string
+): Promise<{ image: AskImage; costCents: number }> {
   if (!env.imageProvider || !env.imageApiKey) {
-    return FALLBACK_IMAGE;
+    return { image: FALLBACK_IMAGE, costCents: 0 };
   }
 
   const prompt = buildPrompt(question, answer);
@@ -52,12 +55,14 @@ export async function generateImage(question: string, answer: string): Promise<A
     switch (env.imageProvider) {
       case "openai": {
         const result = await generateWithOpenAI(prompt);
-        return result ?? FALLBACK_IMAGE;
+        return result
+          ? { image: result, costCents: env.imageGenerationCostCents }
+          : { image: FALLBACK_IMAGE, costCents: 0 };
       }
       default:
-        return FALLBACK_IMAGE;
+        return { image: FALLBACK_IMAGE, costCents: 0 };
     }
   } catch {
-    return FALLBACK_IMAGE;
+    return { image: FALLBACK_IMAGE, costCents: 0 };
   }
 }

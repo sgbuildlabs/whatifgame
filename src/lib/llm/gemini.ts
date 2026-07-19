@@ -1,7 +1,6 @@
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { env } from "../env";
-import type { ModerationResult } from "../types";
-import type { LlmClient } from "./types";
+import type { LlmClient, LlmUsage } from "./types";
 import { SAFETY_CATEGORIES } from "./classifierSchema";
 
 const CLASSIFIER_RESPONSE_SCHEMA: Schema = {
@@ -23,6 +22,15 @@ function getClient(): GoogleGenerativeAI {
   return client;
 }
 
+function usageFromResponse(response: {
+  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
+}): LlmUsage {
+  return {
+    inputTokens: response.usageMetadata?.promptTokenCount ?? 0,
+    outputTokens: response.usageMetadata?.candidatesTokenCount ?? 0,
+  };
+}
+
 export function createGeminiClient(model: string): LlmClient {
   return {
     async generateText({ system, prompt, maxTokens }) {
@@ -32,10 +40,13 @@ export function createGeminiClient(model: string): LlmClient {
         generationConfig: { maxOutputTokens: maxTokens },
       });
       const result = await genModel.generateContent(prompt);
-      return result.response.text().trim();
+      return {
+        text: result.response.text().trim(),
+        usage: usageFromResponse(result.response),
+      };
     },
 
-    async classify({ system, text }): Promise<ModerationResult> {
+    async classify({ system, text }) {
       const genModel = getClient().getGenerativeModel({
         model,
         systemInstruction: system,
@@ -46,16 +57,18 @@ export function createGeminiClient(model: string): LlmClient {
         },
       });
 
+      const result = await genModel.generateContent(text);
+      const usage = usageFromResponse(result.response);
+
       try {
-        const result = await genModel.generateContent(text);
         const parsed = JSON.parse(result.response.text()) as {
           safe: boolean;
           category?: string;
           reason?: string;
         };
-        return { safe: parsed.safe, category: parsed.category, reason: parsed.reason };
+        return { result: { safe: parsed.safe, category: parsed.category, reason: parsed.reason }, usage };
       } catch {
-        return { safe: false, reason: "moderation_classifier_failed" };
+        return { result: { safe: false, reason: "moderation_classifier_failed" }, usage };
       }
     },
   };

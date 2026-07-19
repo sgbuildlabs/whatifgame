@@ -4,14 +4,17 @@ import { searchOpenverse } from "./openverse";
 import { generateImage } from "./generate";
 import type { AskImage } from "../types";
 
-export async function pickImage(question: string, answer: string): Promise<AskImage> {
+export async function pickImage(
+  question: string,
+  answer: string
+): Promise<{ image: AskImage; costCents: number }> {
   const term = deriveImageSearchTerm(question);
 
   const wiki = await searchWikimedia(term);
-  if (wiki) return wiki;
+  if (wiki) return { image: wiki, costCents: 0 };
 
   const openverse = await searchOpenverse(term);
-  if (openverse) return openverse;
+  if (openverse) return { image: openverse, costCents: 0 };
 
   return generateImage(question, answer);
 }

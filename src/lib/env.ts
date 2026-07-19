@@ -45,4 +45,21 @@ export const env = {
   get imageApiKey() {
     return process.env.WHATIF_IMAGE_API_KEY || undefined;
   },
+  get imageGenerationCostCents() {
+    const value = Number(process.env.WHATIF_IMAGE_COST_CENTS);
+    return Number.isFinite(value) && value >= 0 ? value : 4;
+  },
+  get upstashRedisUrl() {
+    return process.env.UPSTASH_REDIS_REST_URL || undefined;
+  },
+  get upstashRedisToken() {
+    return process.env.UPSTASH_REDIS_REST_TOKEN || undefined;
+  },
+  get rateLimitEnabled() {
+    return Boolean(this.upstashRedisUrl && this.upstashRedisToken);
+  },
+  get rateLimitCentsPerHour() {
+    const value = Number(process.env.WHATIF_RATE_LIMIT_CENTS_PER_HOUR);
+    return Number.isFinite(value) && value > 0 ? value : 5;
+  },
 };
