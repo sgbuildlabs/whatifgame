@@ -69,7 +69,8 @@ export async function moderateInput(question: string): Promise<ModerationOutcome
       text: question,
     });
     return { result, costCents: computeCostCents(env.moderationModel, usage) };
-  } catch {
+  } catch (error) {
+    console.error("moderateInput failed:", error);
     return { result: { safe: false, reason: "moderation_error" }, costCents: 0 };
   }
 }
@@ -81,7 +82,8 @@ export async function moderateOutput(answer: string): Promise<ModerationOutcome>
       text: answer,
     });
     return { result, costCents: computeCostCents(env.moderationModel, usage) };
-  } catch {
+  } catch (error) {
+    console.error("moderateOutput failed:", error);
     return { result: { safe: false, reason: "moderation_error" }, costCents: 0 };
   }
 }
