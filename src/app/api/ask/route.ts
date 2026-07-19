@@ -45,7 +45,8 @@ export async function POST(req: Request) {
     const answerResult = await generateAnswer(question);
     answer = answerResult.answer;
     totalCostCents += answerResult.costCents;
-  } catch {
+  } catch (error) {
+    console.error("generateAnswer failed:", error);
     await recordSpentCents(ip, totalCostCents);
     return respond({ status: "error", message: "Oops, try again in a moment!" }, 502);
   }
